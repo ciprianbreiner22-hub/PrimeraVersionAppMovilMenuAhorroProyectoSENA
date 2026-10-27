@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MenúAhorro - Planea, Come Bien y Gasta Mejor</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            500: '#ff4d4d',
+                            600: '#e03a3a',
+                            700: '#be123c',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Smooth tab transition */
+        .tab-content {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Range slider styling */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background: #ff4d4d;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(255, 77, 77, 0.4);
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 font-sans antialiased selection:bg-brand-500 selection:text-white bg-slate-100 flex flex-col">
+
+    <!-- APPLICATION CONTAINER -->
+    <div id="app" class="min-h-screen flex flex-col md:flex-row max-w-[1600px] mx-auto w-full bg-slate-50 shadow-2xl relative overflow-x-hidden">
+
+        <!-- OVERLAY PARA MENÚ HAMBURGUESA MÓVIL -->
+        <div id="mobile-sidebar-overlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"></div>
+
+        <!-- SIDEBAR DE NAVEGACIÓN (Desktop & Drawer Móvil Desplegable) -->
+        <aside id="sidebar-menu" class="fixed md:sticky top-0 left-0 h-screen w-72 md:w-64 lg:w-72 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 z-50 -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+            <div>
+                <!-- Header Brand -->
+                <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-rose-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                            <i class="fa-solid fa-utensils text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-brand-600 to-rose-500 bg-clip-text text-transparent">MenúAhorro</h1>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Colombia · Ahorro Real</p>
+                        </div>
+                    </div>
+                    <!-- Botón Cerrar Menú en Móvil -->
+                    <button onclick="toggleMobileSidebar()" class="md:hidden w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Location Picker Sidebar Widget -->
+                <div class="px-4 pt-4">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-location-dot text-brand-500 text-sm"></i>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase">Ubicación</p>
+                                <select id="desktop-location-select" onchange="updateLocation(this.value)" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+                                    <option value="Madrid">Madrid, Cundinamarca</option>
+                                    <option value="Funza">Funza, Cundinamarca</option>
+                                    <option value="Mosquera">Mosquera, Cundinamarca</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop / Drawer Nav Navigation -->
+                <nav class="p-4 space-y-1.5">
+                    <button onclick="switchTab('welcome')" id="desk-nav-welcome" class="desk-nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-600 hover:bg-slate-50 hover:text-brand-500">
+                        <i class="fa-solid fa-star text-lg w-6 text-center"></i>
+                        <span>Bienvenida</span>
+                    </button>
+
+                    <button onclick="switchTab('planificador')" id="desk-nav-planificador" class="desk-nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-600 hover:bg-slate-50 hover:text-brand-500">
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg w-6 text-center"></i>
+                        <span>Planificador</span>
+                    </button>
+
+                    <button onclick="switchTab('inicio')" id="desk-nav-inicio" class="desk-nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-600 hover:bg-slate-50 hover:text-brand-500">
+                        <i class="fa-solid fa-house text-lg w-6 text-center"></i>
+                        <span>Inicio / Resumen</span>
+                    </button>
+
+                    <button onclick="switchTab('menu')" id="desk-nav-menu" class="desk-nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-600 hover:bg-slate-50 hover:text-brand-500">
+                        <i class="fa-solid fa-calendar-days text-lg w-6 text-center"></i>
+                        <span>Mi Menú Semanal</span>
+                    </button>
+
+                    <button onclick="switchTab('recetas')" id="desk-nav-recetas" class="desk-nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-600 hover:bg-slate-50 hover:text-brand-500">
+                        <i class="fa-solid fa-book-open text-lg w-6 text-center"></i>
+                        <span>Recetas Colombianas</span>
+                    </button>
+
+                    <button onclick="switchTab('mercado')" id="desk-nav-mercado" class="desk-nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-600 hover:bg-slate-50 hover:text-brand-500">
+                        <i class="fa-solid fa-cart-shopping text-lg w-6 text-center"></i>
+                        <span>Mercado Inteligente</span>
+                    </button>
+
+                    <button onclick="switchTab('precios')" id="desk-nav-precios" class="desk-nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-600 hover:bg-slate-50 hover:text-brand-500">
+                        <i class="fa-solid fa-tags text-lg w-6 text-center"></i>
+                        <span>Comparador Precios</span>
+                    </button>
+
+                    <button onclick="switchTab('historico')" id="desk-nav-historico" class="desk-nav-btn w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-slate-600 hover:bg-slate-50 hover:text-brand-500">
+                        <i class="fa-solid fa-chart-line text-lg w-6 text-center"></i>
+                        <span>Histórico & Gastos</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Profile & AhorroBot Launcher Widget -->
+            <div class="p-4 border-t border-slate-100 space-y-3">
+                <button onclick="openChatbot()" class="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-brand-500 to-rose-500 text-white shadow-md shadow-brand-500/20 hover:opacity-95 transition-all">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                            <i class="fa-solid fa-robot text-sm"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold">AhorroBot AI</p>
+                            <p class="text-[10px] text-rose-100">Asistente de compras</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs opacity-80"></i>
+                </button>
+
+                <div class="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <div class="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                        MA
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-slate-800 truncate">Mi Presupuesto</p>
+                        <p class="text-[10px] font-semibold text-brand-500 truncate" id="sidebar-budget-display">$180.000 COP/sem</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA (Adaptive to viewports) -->
+        <main class="flex-1 flex flex-col min-h-screen pb-24 md:pb-8 overflow-y-auto max-w-full">
+
+            <!-- MOBILE / TABLET HEADER (Hidden on desktop md+) CON BOTÓN HAMBURGUESA -->
+            <header class="md:hidden sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-3">
+                    <!-- BOTÓN HAMBURGUESA -->
+                    <button onclick="toggleMobileSidebar()" class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-colors focus:outline-none">
+                        <i class="fa-solid fa-bars text-base"></i>
+                    </button>
+
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-xl bg-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                            <i class="fa-solid fa-utensils text-xs"></i>
+                        </div>
+                        <span class="font-black text-lg tracking-tight text-slate-800">MenúAhorro</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1 text-xs font-bold bg-brand-50 text-brand-600 px-2.5 py-1 rounded-full border border-brand-200">
+                        <i class="fa-solid fa-location-dot text-[10px]"></i>
+                        <select id="mobile-location-select" onchange="updateLocation(this.value)" class="bg-transparent focus:outline-none font-bold">
+                            <option value="Madrid">Madrid</option>
+                            <option value="Funza">Funza</option>
+                            <option value="Mosquera">Mosquera</option>
+                        </select>
+                    </div>
+
+                    <button onclick="openChatbot()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center relative hover:bg-brand-50 hover:text-brand-500 transition-colors">
+                        <i class="fa-solid fa-robot text-sm"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-brand-500 rounded-full"></span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- CONTENIDO DINÁMICO DE PANTALLAS -->
+            <div id="content-container" class="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto flex-1">
+                <!-- Javascript will render views here -->
+            </div>
+        </main>
+
+        <!-- NAVEGACIÓN INFERIOR MOBILE/TABLET (Fixed Bottom Bar <768px) -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex justify-around items-center shadow-lg">
+            <button onclick="switchTab('inicio')" id="mobile-nav-inicio" class="mobile-nav-btn flex flex-col items-center gap-1 p-1.5 text-[11px] font-semibold text-slate-400 hover:text-brand-500 transition-all">
+                <i class="fa-solid fa-house text-base"></i>
+                <span>Inicio</span>
+            </button>
+            <button onclick="switchTab('menu')" id="mobile-nav-menu" class="mobile-nav-btn flex flex-col items-center gap-1 p-1.5 text-[11px] font-semibold text-slate-400 hover:text-brand-500 transition-all">
+                <i class="fa-solid fa-calendar-days text-base"></i>
+                <span>Menú</span>
+            </button>
+            <button onclick="switchTab('recetas')" id="mobile-nav-recetas" class="mobile-nav-btn flex flex-col items-center gap-1 p-1.5 text-[11px] font-semibold text-slate-400 hover:text-brand-500 transition-all">
+                <i class="fa-solid fa-book-open text-base"></i>
+                <span>Recetas</span>
+            </button>
+            <button onclick="switchTab('mercado')" id="mobile-nav-mercado" class="mobile-nav-btn flex flex-col items-center gap-1 p-1.5 text-[11px] font-semibold text-slate-400 hover:text-brand-500 transition-all">
+                <i class="fa-solid fa-cart-shopping text-base"></i>
+                <span>Mercado</span>
+            </button>
+            <button onclick="switchTab('precios')" id="mobile-nav-precios" class="mobile-nav-btn flex flex-col items-center gap-1 p-1.5 text-[11px] font-semibold text-slate-400 hover:text-brand-500 transition-all">
+                <i class="fa-solid fa-tags text-base"></i>
+                <span>Precios</span>
+            </button>
+            <button onclick="switchTab('historico')" id="mobile-nav-historico" class="mobile-nav-btn flex flex-col items-center gap-1 p-1.5 text-[11px] font-semibold text-slate-400 hover:text-brand-500 transition-all">
+                <i class="fa-solid fa-chart-line text-base"></i>
+                <span>Histórico</span>
+            </button>
+        </nav>
+
+        <!-- FLOATING BOT TRIGGER FOR DESKTOP -->
+        <button onclick="openChatbot()" class="hidden md:flex fixed bottom-6 right-6 z-40 bg-gradient-to-r from-brand-500 to-rose-500 text-white p-4 rounded-full shadow-2xl hover:scale-105 transition-all items-center gap-3 group">
+            <i class="fa-solid fa-robot text-xl"></i>
+            <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 font-bold text-sm whitespace-nowrap">Asistente AhorroBot</span>
+        </button>
+
+        <!-- CHATBOT MODAL / OVERLAY -->
+        <div id="chatbot-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all">
+            <div class="bg-white w-full sm:max-w-md h-[85vh] sm:h-[600px] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 animate-in slide-in-from-bottom duration-300">
+                
+                <!-- Chatbot Header -->
+                <div class="bg-gradient-to-r from-brand-500 to-rose-500 p-4 text-white flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-base leading-tight">AhorroBot IA</h3>
+                            <p class="text-[11px] text-rose-100 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> En línea · Asistente de MenúAhorro
+                            </p>
+                        </div>
+                    </div>
+                    <button onclick="closeChatbot()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Chatbot Messages Body -->
+                <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50">
+                    <div class="flex gap-2.5 items-start">
+                        <div class="w-7 h-7 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs shrink-0 mt-0.5">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="bg-white p-3.5 rounded-2xl rounded-tl-none border border-slate-200/80 text-xs text-slate-700 space-y-1.5 max-w-[85%] shadow-sm">
+                            <p class="font-bold text-slate-800">¡Hola! Soy AhorroBot 🤖</p>
+                            <p>Puedo ayudarte a sustituir ingredientes costosos, darte recetas rápidas de bajo costo o decirte dónde está más barato el arroz esta semana.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suggested Chips -->
+                <div class="px-4 py-2 bg-white border-t border-slate-100 flex gap-2 overflow-x-auto no-scrollbar">
+                    <button onclick="sendQuickChat('¿Cómo reduzco mi presupuesto 20%?')" class="text-[11px] font-semibold bg-slate-100 hover:bg-brand-50 hover:text-brand-500 text-slate-600 px-3 py-1 rounded-full shrink-0 border border-slate-200/60 transition-colors">
+                        💡 Reducir 20% gasto
+                    </button>
+                    <button onclick="sendQuickChat('Sustituto económico para el queso')" class="text-[11px] font-semibold bg-slate-100 hover:bg-brand-50 hover:text-brand-500 text-slate-600 px-3 py-1 rounded-full shrink-0 border border-slate-200/60 transition-colors">
+                        🧀 Sustitutos
+                    </button>
+                    <button onclick="sendQuickChat('Receta con huevos y arroz')" class="text-[11px] font-semibold bg-slate-100 hover:bg-brand-50 hover:text-brand-500 text-slate-600 px-3 py-1 rounded-full shrink-0 border border-slate-200/60 transition-colors">
+                        🍳 Receta económica
+                    </button>
+                </div>
+
+                <!-- Chat Input Form -->
+                <form onsubmit="handleChatSubmit(event)" class="p-3 bg-white border-t border-slate-200 flex gap-2">
+                    <input type="text" id="chat-input" placeholder="Escribe tu consulta de ahorro..." class="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2.5 text-xs focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none">
+                    <button type="submit" class="w-10 h-10 bg-brand-500 hover:bg-brand-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-brand-500/20 transition-all">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- APPLICATION LOGIC & STATE ENGINE -->
+    <script>
+        // GLOBAL STATE
+        const state = {
+            currentTab: 'welcome', // welcome | planificador | inicio | menu | recetas | mercado | precios | historico
+            location: 'Madrid',
+            step: 1, // Wizard step 1..4
+            planner: {
+                location: 'Madrid',
+                storeChoice: 'combinar', // combinar | d1 | ara | fruver
+                budget: 180000,
+                people: 2,
+                days: 7,
+                dieta: 'equilibrada'
+            },
+            menuDayIndex: 2, // 0..6 (Miércoles default)
+            purchasedItems: {},
+            historicalFilter: 'mes' // mes | 6meses | ano
+        };
+
+        // DATASETS
+        const LOCAL_MUNICIPALITIES = ['Madrid', 'Funza', 'Mosquera'];
+
+        const STORES_LIST = [
+            { id: 'combinar', name: 'Combinar establecimientos', desc: 'Te sugerimos dónde conviene cada producto', icon: 'fa-right-left', badge: 'Máximo Ahorro' },
+            { id: 'd1', name: 'D1', desc: 'Supermercado de descuento', logo: 'D1', isReal: true },
+            { id: 'ara', name: 'Ara', desc: 'Supermercado de descuento', logo: 'Ar', isReal: true },
+            { id: 'fruver', name: 'Fruver La Sabana', desc: 'Ejemplo de fruver local', logo: 'Fr', isReal: false }
+        ];
+
+        const COLOMBIAN_RECIPES = [
+            {
+                id: 'r1',
+                title: 'Arepa con huevo y aguacate',
+                category: 'DESAYUNO',
+                prepTime: '18 min',
+                portions: 2,
+                pricePortion: 6300,
+                totalPrice: 12600,
+                image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500&auto=format&fit=crop&q=60',
+                ingredients: ['Arepas de maíz (2 und)', 'Huevos frescos (2 und)', 'Aguacate Hass (1 und)', 'Mantequilla & Sal'],
+                tag: 'Rápidas'
+            },
+            {
+                id: 'r2',
+                title: 'Bowl criollo de pollo',
+                category: 'ALMUERZO',
+                prepTime: '32 min',
+                portions: 2,
+                pricePortion: 11400,
+                totalPrice: 22800,
+                image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60',
+                ingredients: ['Pechuga de pollo (300g)', 'Arroz blanco (200g)', 'Frijol negro (150g)', 'Plátano maduro (1 und)'],
+                tag: 'Popular'
+            },
+            {
+                id: 'r3',
+                title: 'Sopa casera de verduras',
+                category: 'CENA',
+                prepTime: '28 min',
+                portions: 2,
+                pricePortion: 7200,
+                totalPrice: 14400,
+                image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500&auto=format&fit=crop&q=60',
+                ingredients: ['Zanahoria y papa sabanera', 'Espinaca fresca', 'Cilantro picado', 'Mazorca tierna'],
+                tag: 'Económicas'
+            },
+            {
+                id: 'r4',
+                title: 'Calentado con hogao',
+                category: 'DESAYUNO',
+                prepTime: '15 min',
+                portions: 2,
+                pricePortion: 5900,
+                totalPrice: 11800,
+                image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=500&auto=format&fit=crop&q=60',
+                ingredients: ['Arroz y frijoles del día anterior', 'Hogao criollo de tomate y cebolla', 'Huevo frito (2 und)'],
+                tag: 'Rápidas'
+            }
+        ];
+
+        const GROCERY_CATEGORIES = [
+            {
+                category: 'Despensa',
+                count: 3,
+                items: [
+                    { id: 'g1', name: 'Harina de maíz', qty: '160 g', atHome: true },
+                    { id: 'g2', name: 'Arroz blanco', qty: '200 g', atHome: true },
+                    { id: 'g3', name: 'Fríjol cargamento', qty: '160 g', atHome: true }
+                ]
+            },
+            {
+                category: 'Huevos y lácteos',
+                count: 1,
+                items: [
+                    { id: 'g4', name: 'Huevos A/AA', qty: '4 und', atHome: false }
+                ]
+            },
+            {
+                category: 'Frutas y verduras',
+                count: 6,
+                items: [
+                    { id: 'g5', name: 'Aguacate Hass', qty: '1.5 und', atHome: false },
+                    { id: 'g6', name: 'Tomate chonto', qty: '500 g', atHome: false },
+                    { id: 'g7', name: 'Cebolla larga', qty: '1 atado', atHome: true },
+                    { id: 'g8', name: 'Cilantro fresco', qty: '1 manojo', atHome: false }
+                ]
+            }
+        ];
+
+        const PRICE_COMPARISON = [
+            { id: 'p1', name: 'Arroz blanco Diana 1 kg', store: 'D1 - Madrid', price: 4650, isBest: true, badge: 'MEJOR PRECIO', logo: 'D1' },
+            { id: 'p2', name: 'Arroz blanco Roa 1 kg', store: 'Ara - Madrid', price: 4890, isBest: false, badge: 'Normal', logo: 'Ara' },
+            { id: 'p3', name: 'Arroz blanco Diana 1 kg', store: 'Éxito - Funza', price: 5250, isBest: false, badge: 'Normal', logo: 'Éxito' },
+            { id: 'p4', name: 'Aceite Vegetal 900ml', store: 'D1 - Madrid', price: 7450, isBest: true, badge: 'MEJOR PRECIO', logo: 'D1' },
+            { id: 'p5', name: 'Huevos AA x30 und', store: 'Ara - Mosquera', price: 16200, isBest: true, badge: 'MEJOR PRECIO', logo: 'Ara' }
+        ];
+
+        const HISTORICAL_DATA = {
+            mes: { labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'], dataBudget: [180, 180, 180, 180], dataSpent: [165, 172, 158, 160] },
+            '6meses': { labels: ['May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'], dataBudget: [720, 720, 750, 750, 750, 720], dataSpent: [680, 710, 690, 730, 700, 650] },
+            ano: { labels: ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026'], dataBudget: [2160, 2160, 2250, 2250], dataSpent: [2010, 2080, 2100, 1980] }
+        };
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+            render();
+            setupChart();
+        });
+
+        // CONTROLADOR DE SIDEBAR HAMBURGUESA MÓVIL
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar-menu');
+            const overlay = document.getElementById('mobile-sidebar-overlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            }
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('sidebar-menu');
+            const overlay = document.getElementById('mobile-sidebar-overlay');
+            if (sidebar && overlay) {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('menuahorro_state', JSON.stringify({
+                location: state.location,
+                planner: state.planner,
+                purchasedItems: state.purchasedItems
+            }));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('menuahorro_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.location) state.location = parsed.location;
+                    if (parsed.planner) state.planner = { ...state.planner, ...parsed.planner };
+                    if (parsed.purchasedItems) state.purchasedItems = parsed.purchasedItems;
+                } catch(e) { console.error("Error loading cache", e); }
+            }
+            updateLocationDisplays();
+        }
+
+        function updateLocation(val) {
+            state.location = val;
+            state.planner.location = val;
+            updateLocationDisplays();
+            saveToLocalStorage();
+            render();
+        }
+
+        function updateLocationDisplays() {
+            const dSelect = document.getElementById('desktop-location-select');
+            const mSelect = document.getElementById('mobile-location-select');
+            if (dSelect) dSelect.value = state.location;
+            if (mSelect) mSelect.value = state.location;
+        }
+
+        // NAVIGATION TAB SWITCHER
+        function switchTab(tabName) {
+            state.currentTab = tabName;
+            closeMobileSidebar();
+            
+            // Highlight Desktop Nav
+            document.querySelectorAll('.desk-nav-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-50', 'text-brand-500', 'font-bold');
+                btn.classList.add('text-slate-600');
+            });
+            const activeDesk = document.getElementById(`desk-nav-${tabName}`);
+            if (activeDesk) {
+                activeDesk.classList.add('bg-brand-50', 'text-brand-500', 'font-bold');
+                activeDesk.classList.remove('text-slate-600');
+            }
+
+            // Highlight Mobile Nav
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                btn.classList.remove('text-brand-500');
+                btn.classList.add('text-slate-400');
+            });
+            const activeMobile = document.getElementById(`mobile-nav-${tabName}`);
+            if (activeMobile) {
+                activeMobile.classList.add('text-brand-500');
+                activeMobile.classList.remove('text-slate-400');
+            }
+
+            // Update Budget display sidebar
+            const budgetDisplay = document.getElementById('sidebar-budget-display');
+            if(budgetDisplay) {
+                budgetDisplay.innerText = `$${state.planner.budget.toLocaleString('es-CO')} COP/sem`;
+            }
+
+            render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // VIEW RENDERER
+        function render() {
+            const container = document.getElementById('content-container');
+            if (!container) return;
+
+            let html = '';
+            switch (state.currentTab) {
+                case 'welcome':
+                    html = renderWelcome();
+                    break;
+                case 'planificador':
+                    html = renderPlanificador();
+                    break;
+                case 'inicio':
+                    html = renderInicio();
+                    break;
+                case 'menu':
+                    html = renderMenu();
+                    break;
+                case 'recetas':
+                    html = renderRecetas();
+                    break;
+                case 'mercado':
+                    html = renderMercado();
+                    break;
+                case 'precios':
+                    html = renderPrecios();
+                    break;
+                case 'historico':
+                    html = renderHistorico();
+                    setTimeout(initHistoricalChart, 100);
+                    break;
+                default:
+                    html = renderWelcome();
+            }
+
+            container.innerHTML = `<div class="tab-content">${html}</div>`;
+        }
+
+        // ==========================================
+        // VISTA 0: PANTALLA DE BIENVENIDA (PROTOTIPO FIGMA)
+        // ==========================================
+        function renderWelcome() {
+            return `
+                <div class="max-w-md mx-auto bg-white rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden my-2 flex flex-col justify-between">
+                    <!-- Dynamic Hero Image Section -->
+                    <div class="relative h-72 sm:h-80 w-full overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=800&auto=format&fit=crop&q=80" class="w-full h-full object-cover" alt="Comida Colombiana">
+                        
+                        <!-- Floating Pill Badge -->
+                        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-lg bg-brand-500 text-white flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-utensils"></i>
+                            </div>
+                            <span class="font-extrabold text-xs text-slate-800">MenúAhorro</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Welcome Content -->
+                    <div class="p-6 text-center space-y-5">
+                        <span class="inline-block bg-rose-50 text-brand-600 px-4 py-1.5 rounded-full text-xs font-black tracking-wide border border-rose-100">
+                            Tu semana, más rica y organizada
+                        </span>
+
+                        <div class="space-y-2">
+                            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-none">
+                                Come bien.<br>
+                                <span class="text-brand-500">Gasta mejor.</span>
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-500 max-w-xs mx-auto leading-relaxed pt-1">
+                                Planea tus comidas, ajusta tu presupuesto y arma el mercado de la semana con sabores colombianos.
+                            </p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="space-y-3 pt-2">
+                            <button onclick="state.step = 1; switchTab('planificador');" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-brand-500/30 transition-all flex items-center justify-center gap-2">
+                                <span>Crear mi menú</span>
+                                <i class="fa-solid fa-arrow-right text-xs"></i>
+                            </button>
+
+                            <button onclick="switchTab('inicio');" class="w-full py-2.5 text-brand-600 font-extrabold text-xs hover:underline transition-all">
+                                Explorar primero
+                            </button>
+                        </div>
+
+                        <!-- Sub-badges -->
+                        <div class="flex justify-center items-center gap-4 text-[11px] font-semibold text-slate-400 pt-1">
+                            <span class="flex items-center gap-1"><i class="fa-solid fa-check text-emerald-500 text-[10px]"></i> Sin registro</span>
+                            <span class="flex items-center gap-1"><i class="fa-solid fa-check text-emerald-500 text-[10px]"></i> Datos locales</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // VISTA 1: PLANIFICADOR (WIZARD PASO A PASO)
+        // ==========================================
+        function renderPlanificador() {
+            const s = state.step;
+            return `
+                <div class="max-w-xl mx-auto space-y-6">
+                    <!-- Top Stepper Header -->
+                    <div class="flex items-center justify-between">
+                        <button onclick="if(state.step > 1){ state.step--; render(); } else { switchTab('welcome'); }" class="w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center shadow-sm hover:bg-slate-50">
+                            <i class="fa-solid fa-arrow-left text-xs"></i>
+                        </button>
+
+                        <!-- Progress Bar Container -->
+                        <div class="flex-1 mx-4">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[11px] font-black tracking-widest text-brand-500 uppercase">PASO ${s} DE 4</span>
+                                <span class="text-xs font-bold text-slate-400">${s === 1 ? 'UBICACIÓN' : s === 2 ? 'COMPRA' : s === 3 ? 'PRESUPUESTO' : 'TU PLAN'}</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                <div class="bg-brand-500 h-full transition-all duration-300" style="width: ${(s/4)*100}%"></div>
+                            </div>
+                        </div>
+
+                        <span class="text-xs font-black text-slate-400">${s}/4</span>
+                    </div>
+
+                    <!-- STEP 1: UBICACIÓN -->
+                    ${s === 1 ? `
+                        <div class="space-y-4">
+                            <div>
+                                <h2 class="text-2xl font-black text-slate-800 tracking-tight">¿Dónde compras esta semana?</h2>
+                                <p class="text-xs text-slate-500 mt-1">Así te mostramos opciones cercanas y precios disponibles para tu zona.</p>
+                            </div>
+
+                            <div class="space-y-3 pt-2">
+                                ${LOCAL_MUNICIPALITIES.map(muni => `
+                                    <button onclick="state.planner.location = '${muni}'; state.location = '${muni}'; updateLocationDisplays(); render();" class="w-full p-4 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${state.planner.location === muni ? 'border-brand-500 bg-brand-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'}">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-xl ${state.planner.location === muni ? 'bg-brand-500 text-white' : 'bg-brand-50 text-brand-500'} flex items-center justify-center">
+                                                <i class="fa-solid fa-location-dot"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-sm text-slate-800">${muni}</p>
+                                                <p class="text-xs text-slate-400">Cundinamarca</p>
+                                            </div>
+                                        </div>
+                                        ${state.planner.location === muni ? `<div class="w-6 h-6 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs"><i class="fa-solid fa-check"></i></div>` : ''}
+                                    </button>
+                                `).join('')}
+                            </div>
+
+                            <div class="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl flex items-start gap-3 text-xs text-amber-800">
+                                <i class="fa-solid fa-circle-info text-amber-500 text-sm mt-0.5"></i>
+                                <p>Podrás cambiar el municipio en cualquier momento desde la parte superior.</p>
+                            </div>
+
+                            <button onclick="state.step = 2; render();" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2">
+                                <span>Continuar</span>
+                                <i class="fa-solid fa-arrow-right text-xs"></i>
+                            </button>
+                        </div>
+                    ` : ''}
+
+                    <!-- STEP 2: ESTABLECIMIENTO DE COMPRA -->
+                    ${s === 2 ? `
+                        <div class="space-y-4">
+                            <div>
+                                <h2 class="text-2xl font-black text-slate-800 tracking-tight">Elige cómo vas a comprar</h2>
+                                <p class="text-xs text-slate-500 mt-1">Selecciona un establecimiento o combina opciones para ahorrar.</p>
+                            </div>
+
+                            <div class="space-y-3 pt-2">
+                                ${STORES_LIST.map(store => `
+                                    <button onclick="state.planner.storeChoice = '${store.id}'; render();" class="w-full p-4 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${state.planner.storeChoice === store.id ? 'border-brand-500 bg-brand-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'}">
+                                        <div class="flex items-center gap-3.5">
+                                            <div class="w-11 h-11 rounded-2xl border border-slate-200 bg-slate-100 flex items-center justify-center font-black text-slate-700 text-sm">
+                                                ${store.logo ? store.logo : `<i class="fa-solid ${store.icon} text-brand-500"></i>`}
+                                            </div>
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <p class="font-bold text-sm text-slate-800">${store.name}</p>
+                                                    ${store.badge ? `<span class="bg-brand-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">${store.badge}</span>` : ''}
+                                                </div>
+                                                <p class="text-xs text-slate-400">${store.desc}</p>
+                                            </div>
+                                        </div>
+                                        <div class="w-5 h-5 rounded-full border-2 ${state.planner.storeChoice === store.id ? 'border-brand-500 bg-brand-500' : 'border-slate-300'} flex items-center justify-center">
+                                            ${state.planner.storeChoice === store.id ? `<div class="w-2 h-2 rounded-full bg-white"></div>` : ''}
+                                        </div>
+                                    </button>
+                                `).join('')}
+                            </div>
+
+                            <p class="text-[11px] text-slate-400 text-center px-4">
+                                Los establecimientos con presencia verificada en ${state.planner.location}. Precios actualizados frecuentemente.
+                            </p>
+
+                            <button onclick="state.step = 3; render();" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2">
+                                <span>Continuar</span>
+                                <i class="fa-solid fa-arrow-right text-xs"></i>
+                            </button>
+                        </div>
+                    ` : ''}
+
+                    <!-- STEP 3: PRESUPUESTO -->
+                    ${s === 3 ? `
+                        <div class="space-y-5">
+                            <div>
+                                <h2 class="text-2xl font-black text-slate-800 tracking-tight">Define tu presupuesto</h2>
+                                <p class="text-xs text-slate-500 mt-1">Lo usamos como guía para armar un menú que se ajuste a tu bolsillo.</p>
+                            </div>
+
+                            <!-- Budget Big Card Display -->
+                            <div class="bg-brand-50/60 p-6 rounded-3xl border border-brand-100 text-center space-y-4">
+                                <p class="text-xs font-bold text-slate-500">Presupuesto semanal</p>
+                                <p class="text-4xl font-black text-slate-900">$ ${state.planner.budget.toLocaleString('es-CO')}</p>
+
+                                <input type="range" min="80000" max="400000" step="5000" value="${state.planner.budget}" oninput="state.planner.budget = parseInt(this.value); render();" class="w-full accent-brand-500">
+
+                                <div class="flex justify-between text-[11px] font-bold text-slate-400">
+                                    <span>$80 mil</span>
+                                    <span>$400 mil</span>
+                                </div>
+                            </div>
+
+                            <!-- Preset Quick Buttons -->
+                            <div class="grid grid-cols-3 gap-2.5">
+                                ${[120000, 180000, 250000].map(amt => `
+                                    <button onclick="state.planner.budget = ${amt}; render();" class="py-3 px-2 rounded-2xl border font-bold text-xs transition-all ${state.planner.budget === amt ? 'border-brand-500 bg-white text-brand-500 shadow-sm ring-1 ring-brand-500' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}">
+                                        $ ${amt.toLocaleString('es-CO')}
+                                    </button>
+                                `).join('')}
+                            </div>
+
+                            <!-- Dynamic Calculation Tip -->
+                            <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-xl bg-indigo-500 text-white flex items-center justify-center text-sm shrink-0">
+                                    <i class="fa-solid fa-sparkles"></i>
+                                </div>
+                                <div class="text-xs">
+                                    <p class="font-bold text-indigo-900">Buen punto de partida</p>
+                                    <p class="text-indigo-700">Son cerca de $ ${Math.round(state.planner.budget / (state.planner.days || 7)).toLocaleString('es-CO')} al día para tu hogar.</p>
+                                </div>
+                            </div>
+
+                            <button onclick="state.step = 4; render();" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2">
+                                <span>Continuar</span>
+                                <i class="fa-solid fa-arrow-right text-xs"></i>
+                            </button>
+                        </div>
+                    ` : ''}
+
+                    <!-- STEP 4: PERSONALIZA TU PLAN -->
+                    ${s === 4 ? `
+                        <div class="space-y-5">
+                            <div>
+                                <h2 class="text-2xl font-black text-slate-800 tracking-tight">Personaliza tu plan</h2>
+                                <p class="text-xs text-slate-500 mt-1">Las cantidades y el mercado se actualizarán automáticamente.</p>
+                            </div>
+
+                            <!-- People Counter Box -->
+                            <div class="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                                <div>
+                                    <p class="font-bold text-sm text-slate-800">¿Para cuántas personas?</p>
+                                    <p class="text-xs text-slate-400">Ajustamos todas las porciones</p>
+                                </div>
+                                <div class="flex items-center gap-3 bg-slate-100 p-1.5 rounded-xl">
+                                    <button onclick="if(state.planner.people > 1){ state.planner.people--; render(); }" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-700 font-bold hover:bg-slate-200">
+                                        <i class="fa-solid fa-minus text-xs"></i>
+                                    </button>
+                                    <span class="font-extrabold text-slate-800 text-base w-4 text-center">${state.planner.people}</span>
+                                    <button onclick="state.planner.people++; render();" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-700 font-bold hover:bg-slate-200">
+                                        <i class="fa-solid fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Days Selector Box -->
+                            <div class="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                                <p class="font-bold text-sm text-slate-800">¿Cuántos días quieres planear?</p>
+                                <div class="grid grid-cols-3 gap-3">
+                                    ${[3, 5, 7].map(d => `
+                                        <button onclick="state.planner.days = ${d}; render();" class="p-4 rounded-2xl border-2 text-center transition-all ${state.planner.days === d ? 'border-brand-500 bg-brand-50/50 text-brand-500 font-black' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}">
+                                            <p class="text-lg leading-tight">${d}</p>
+                                            <p class="text-[10px] font-normal text-slate-400">días</p>
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <!-- Plan Summary Card -->
+                            <div class="p-4 bg-brand-50/70 border border-brand-100 rounded-2xl flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center text-base shadow-sm">
+                                    <i class="fa-solid fa-calendar-check"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] font-bold text-slate-400 uppercase">Tu plan actual</p>
+                                    <p class="font-extrabold text-sm text-slate-800">${state.planner.days} días · ${state.planner.people} personas</p>
+                                    <p class="text-xs text-slate-500">Presupuesto de $ ${state.planner.budget.toLocaleString('es-CO')}</p>
+                                </div>
+                            </div>
+
+                            <button onclick="saveToLocalStorage(); switchTab('inicio');" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generar mi menú</span>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // VISTA 2: INICIO / DASHBOARD
+        // ==========================================
+        function renderInicio() {
+            return `
+                <div class="space-y-6">
+                    <!-- Top Welcome & Location Header -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] font-bold text-brand-500 uppercase tracking-wider">MIÉRCOLES, 20 DE MAYO</p>
+                            <h2 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Hola, ¿qué cocinamos hoy?</h2>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center font-black text-sm shadow-md">
+                            MA
+                        </div>
+                    </div>
+
+                    <!-- Main Banner Card -->
+                    <div class="bg-gradient-to-br from-brand-500 to-rose-500 p-6 rounded-3xl text-white shadow-xl shadow-brand-500/20 relative overflow-hidden space-y-4">
+                        <div class="flex justify-between items-start">
+                            <span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">PLAN DE ${state.planner.days} DÍAS</span>
+                            <span class="text-xs text-rose-100 font-semibold">3 de ${state.planner.days} completados</span>
+                        </div>
+
+                        <div>
+                            <h3 class="text-2xl font-black leading-tight">Tu semana está lista</h3>
+                            <p class="text-xs text-rose-100 mt-1">Menú equilibrado para ${state.planner.people} personas, pensado para tu presupuesto.</p>
+                        </div>
+
+                        <!-- Progress Line -->
+                        <div class="space-y-1.5 pt-2">
+                            <div class="w-full bg-black/20 h-2 rounded-full overflow-hidden">
+                                <div class="bg-white h-full rounded-full" style="width: 35%"></div>
+                            </div>
+                            <div class="flex justify-between text-xs font-bold">
+                                <span>$ 49.800 <span class="font-normal opacity-80">estimados</span></span>
+                                <span class="opacity-80">de $ ${state.planner.budget.toLocaleString('es-CO')}</span>
+                            </div>
+                        </div>
+
+                        <button onclick="switchTab('menu')" class="w-full py-3 bg-white text-brand-600 font-bold text-xs rounded-2xl shadow-sm hover:bg-rose-50 transition-all flex items-center justify-center gap-2">
+                            <span>Ver mi menú completo</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Today's Menu Section -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-[10px] font-extrabold text-brand-500 uppercase">HOY EN TU MENÚ</p>
+                                <h3 class="text-xl font-black text-slate-800">Miércoles</h3>
+                            </div>
+                            <button onclick="switchTab('menu')" class="text-xs font-bold text-brand-500 hover:underline">Ver semana</button>
+                        </div>
+
+                        <!-- Responsive Grid for Today Cards -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${COLOMBIAN_RECIPES.slice(0, 2).map(r => `
+                                <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5 hover:shadow-md transition-all">
+                                    <img src="${r.image}" class="w-20 h-20 rounded-xl object-cover shrink-0" alt="${r.title}">
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-[9px] font-black text-brand-500 uppercase">${r.category}</span>
+                                        <h4 class="font-bold text-sm text-slate-800 truncate leading-tight">${r.title}</h4>
+                                        <p class="text-[11px] text-slate-400 mt-1"><i class="fa-regular fa-clock"></i> ${r.prepTime} · ${r.portions} porciones</p>
+                                        <p class="text-xs font-extrabold text-brand-500 mt-1">$ ${r.totalPrice.toLocaleString('es-CO')} <span class="text-[10px] font-normal text-slate-400">total est.</span></p>
+                                    </div>
+                                    <button onclick="switchTab('recetas')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-brand-50 hover:text-brand-500 transition-colors shrink-0">
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // VISTA 3: MI MENÚ SEMANAL
+        // ==========================================
+        function renderMenu() {
+            const days = [
+                { name: 'L', num: 18 },
+                { name: 'M', num: 19 },
+                { name: 'M', num: 20 },
+                { name: 'J', num: 21 },
+                { name: 'V', num: 22 },
+                { name: 'S', num: 23 },
+                { name: 'D', num: 24 }
+            ];
+
+            return `
+                <div class="space-y-5 max-w-4xl mx-auto">
+                    <!-- Top Title -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-[10px] font-extrabold text-brand-500 uppercase">PLAN SEMANAL</p>
+                            <h2 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Mi menú</h2>
+                        </div>
+                        <button onclick="switchTab('planificador')" class="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors text-xs font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span class="hidden sm:inline">Ajustar Plan</span>
+                        </button>
+                    </div>
+
+                    <!-- Days Selector Strip -->
+                    <div class="flex justify-between items-center bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm overflow-x-auto">
+                        ${days.map((d, idx) => `
+                            <button onclick="state.menuDayIndex = ${idx}; render();" class="flex flex-col items-center py-2 px-3 rounded-xl min-w-[42px] transition-all ${state.menuDayIndex === idx ? 'bg-brand-500 text-white font-bold shadow-md shadow-brand-500/20' : 'text-slate-600 hover:bg-slate-100'}">
+                                <span class="text-[10px] font-semibold opacity-80">${d.name}</span>
+                                <span class="text-sm font-extrabold">${d.num}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+
+                    <!-- Selected Day Summary -->
+                    <div class="flex justify-between items-center px-1">
+                        <span class="font-bold text-sm text-slate-700">Miércoles · 3 comidas</span>
+                        <span class="text-xs font-extrabold text-slate-500">$ 38.800 estimados</span>
+                    </div>
+
+                    <!-- Recipes for Selected Day -->
+                    <div class="space-y-3">
+                        ${COLOMBIAN_RECIPES.map(r => `
+                            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+                                <img src="${r.image}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover shrink-0" alt="${r.title}">
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-[9px] font-black text-brand-500 uppercase tracking-wide">${r.category}</span>
+                                    <h4 class="font-extrabold text-sm sm:text-base text-slate-800 truncate">${r.title}</h4>
+                                    <div class="flex items-center gap-3 text-xs text-slate-400 mt-1">
+                                        <span><i class="fa-regular fa-clock"></i> ${r.prepTime}</span>
+                                        <span><i class="fa-solid fa-user-group text-[10px]"></i> ${r.portions} porciones</span>
+                                    </div>
+                                    <p class="text-xs font-black text-brand-500 mt-1.5">$ ${r.totalPrice.toLocaleString('es-CO')} <span class="text-[10px] font-normal text-slate-400">total estimado</span></p>
+                                </div>
+                                <button onclick="openChatbot('Sustituir ingredientes para ${r.title}')" class="w-9 h-9 rounded-full bg-brand-50 text-brand-500 flex items-center justify-center hover:bg-brand-500 hover:text-white transition-all shrink-0">
+                                    <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button onclick="switchTab('recetas')" class="w-full py-3.5 bg-white border border-brand-500 text-brand-500 font-bold text-xs rounded-2xl hover:bg-brand-50 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>Reemplazar una receta</span>
+                    </button>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // VISTA 4: RECETAS COLOMBIANAS
+        // ==========================================
+        function renderRecetas() {
+            return `
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-[10px] font-extrabold text-brand-500 uppercase">INSPÍRATE</p>
+                            <h2 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Recetas colombianas</h2>
+                        </div>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" placeholder="Buscar platos o ingredientes..." class="w-full pl-11 pr-4 py-3 bg-white rounded-2xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+
+                    <!-- Filters Chips -->
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                        <button class="px-4 py-2 bg-brand-500 text-white rounded-full text-xs font-bold shrink-0">Todas</button>
+                        <button class="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-full text-xs font-semibold shrink-0 hover:bg-slate-50">Rápidas</button>
+                        <button class="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-full text-xs font-semibold shrink-0 hover:bg-slate-50">Económicas</button>
+                        <button class="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-full text-xs font-semibold shrink-0 hover:bg-slate-50">Vegetarianas</button>
+                    </div>
+
+                    <!-- Responsive Grid of Recipes -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                        ${COLOMBIAN_RECIPES.map(r => `
+                            <div class="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
+                                <div class="relative h-44">
+                                    <img src="${r.image}" class="w-full h-full object-cover" alt="${r.title}">
+                                    <span class="absolute top-3 left-3 bg-brand-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">${r.tag}</span>
+                                    <button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-md text-rose-500 flex items-center justify-center hover:bg-white transition-colors">
+                                        <i class="fa-regular fa-heart text-xs"></i>
+                                    </button>
+                                </div>
+                                <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                                    <div>
+                                        <span class="text-[9px] font-bold text-brand-500 uppercase">${r.category}</span>
+                                        <h3 class="font-extrabold text-slate-800 text-base leading-snug">${r.title}</h3>
+                                        <p class="text-xs text-slate-400 mt-1"><i class="fa-regular fa-clock"></i> ${r.prepTime} · $ ${r.pricePortion.toLocaleString('es-CO')} / porción</p>
+                                    </div>
+                                    <button onclick="switchTab('menu')" class="w-full py-2.5 bg-slate-100 hover:bg-brand-50 hover:text-brand-500 text-slate-700 font-bold text-xs rounded-xl transition-all">
+                                        Agregar al menú
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // VISTA 5: MERCADO INTELIGENTE
+        // ==========================================
+        function renderMercado() {
+            let totalItems = 0;
+            let checkedItems = 0;
+
+            GROCERY_CATEGORIES.forEach(c => {
+                c.items.forEach(i => {
+                    totalItems++;
+                    if (state.purchasedItems[i.id]) checkedItems++;
+                });
+            });
+
+            return `
+                <div class="space-y-5 max-w-4xl mx-auto">
+                    <!-- Title -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-[10px] font-extrabold text-brand-500 uppercase">LISTA INTELIGENTE</p>
+                            <h2 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Mi mercado</h2>
+                        </div>
+                        <span class="bg-brand-50 text-brand-600 border border-brand-200 px-3 py-1 rounded-full text-xs font-black">
+                            ${checkedItems}/${totalItems}
+                        </span>
+                    </div>
+
+                    <!-- Banner Card -->
+                    <div class="bg-gradient-to-r from-brand-500 to-rose-500 p-5 rounded-3xl text-white shadow-lg shadow-brand-500/20 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-basket-shopping"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-base leading-tight">Mercado para ${state.planner.people} personas</h3>
+                            <p class="text-xs text-rose-100 mt-0.5">${state.planner.days} días · ${totalItems} productos sin duplicados</p>
+                        </div>
+                    </div>
+
+                    <!-- Grocery Categories Checklist -->
+                    <div class="space-y-4">
+                        ${GROCERY_CATEGORIES.map(cat => `
+                            <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                                    <h3 class="font-extrabold text-slate-800 text-sm">${cat.category}</h3>
+                                    <span class="w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold flex items-center justify-center">${cat.items.length}</span>
+                                </div>
+
+                                <div class="space-y-2.5">
+                                    ${cat.items.map(item => {
+                                        const isChecked = !!state.purchasedItems[item.id];
+                                        return `
+                                            <div onclick="state.purchasedItems['${item.id}'] = !state.purchasedItems['${item.id}']; saveToLocalStorage(); render();" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-5 h-5 rounded-md border ${isChecked ? 'border-brand-500 bg-brand-500 text-white' : 'border-slate-300'} flex items-center justify-center text-xs transition-all">
+                                                        ${isChecked ? '<i class="fa-solid fa-check"></i>' : ''}
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-xs font-bold ${isChecked ? 'line-through text-slate-400' : 'text-slate-800'}">${item.name}</p>
+                                                        <p class="text-[10px] text-slate-400">${item.qty}</p>
+                                                    </div>
+                                                </div>
+                                                ${item.atHome ? `<span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2.5 py-1 rounded-lg">En casa</span>` : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // VISTA 6: COMPARADOR LOCAL DE PRECIOS
+        // ==========================================
+        function renderPrecios() {
+            return `
+                <div class="space-y-5">
+                    <!-- Header -->
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[10px] font-extrabold text-brand-500 uppercase">COMPARADOR LOCAL</p>
+                            <h2 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Precios</h2>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400">Actualizado hoy</span>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" value="Arroz" class="w-full pl-11 pr-4 py-3 bg-white rounded-2xl border border-brand-500/50 text-xs focus:outline-none ring-2 ring-brand-500/20 font-bold text-slate-800">
+                    </div>
+
+                    <!-- Location Selector Filter -->
+                    <div class="grid grid-cols-3 gap-2">
+                        ${LOCAL_MUNICIPALITIES.map(muni => `
+                            <button onclick="updateLocation('${muni}')" class="py-2.5 rounded-xl font-bold text-xs transition-all ${state.location === muni ? 'bg-brand-500 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">
+                                ${muni}
+                            </button>
+                        `).join('')}
+                    </div>
+
+                    <!-- Price Cards List -->
+                    <div class="space-y-3">
+                        ${PRICE_COMPARISON.map(item => `
+                            <div class="bg-white p-4 rounded-3xl border ${item.isBest ? 'border-brand-500 ring-2 ring-brand-500/10' : 'border-slate-200/80'} shadow-sm flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-2xl ${item.isBest ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'} flex items-center justify-center font-black text-xs shrink-0">
+                                        ${item.logo}
+                                    </div>
+                                    <div>
+                                        ${item.isBest ? `<span class="text-[9px] font-black text-brand-500 uppercase tracking-wider">MEJOR PRECIO</span>` : ''}
+                                        <h4 class="font-extrabold text-sm text-slate-800">${item.name}</h4>
+                                        <p class="text-[11px] text-slate-400">${item.store}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <p class="text-base font-black ${item.isBest ? 'text-brand-500' : 'text-slate-800'}">$ ${item.price.toLocaleString('es-CO')}</p>
+                                    <button class="w-7 h-7 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs mt-1 ml-auto shadow-sm hover:bg-brand-600">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // VISTA 7: HISTÓRICO Y ESTADÍSTICAS
+        // ==========================================
+        function renderHistorico() {
+            return `
+                <div class="space-y-5 max-w-4xl mx-auto">
+                    <div>
+                        <p class="text-[10px] font-extrabold text-brand-500 uppercase">ANÁLISIS FINANCIERO</p>
+                        <h2 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Histórico de Gastos</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Seguimiento comparativo de presupuesto vs. gasto real acumulado.</p>
+                    </div>
+
+                    <!-- Timeframe Filter Buttons -->
+                    <div class="grid grid-cols-3 gap-2 bg-slate-200 p-1 rounded-2xl text-xs font-bold">
+                        <button onclick="state.historicalFilter = 'mes'; render();" class="py-2 rounded-xl transition-all ${state.historicalFilter === 'mes' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}">Mes a Mes</button>
+                        <button onclick="state.historicalFilter = '6meses'; render();" class="py-2 rounded-xl transition-all ${state.historicalFilter === '6meses' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}">6 Meses</button>
+                        <button onclick="state.historicalFilter = 'ano'; render();" class="py-2 rounded-xl transition-all ${state.historicalFilter === 'ano' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}">1 Año</button>
+                    </div>
+
+                    <!-- Chart Canvas Box -->
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex justify-between items-center text-xs font-bold">
+                            <span class="text-slate-700">Presupuesto vs. Gasto (Miles COP)</span>
+                            <div class="flex gap-3">
+                                <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Presupuesto</span>
+                                <span class="flex items-center gap-1.5 text-brand-500"><span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span> Gasto</span>
+                            </div>
+                        </div>
+                        <div class="h-56 relative w-full">
+                            <canvas id="historicalChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Summary Stats Cards -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-emerald-50 border border-emerald-200/80 p-4 rounded-2xl space-y-1">
+                            <p class="text-[10px] font-bold text-emerald-700 uppercase">Ahorro total estimado</p>
+                            <p class="text-2xl font-black text-emerald-900">$ 48.000</p>
+                            <p class="text-[10px] text-emerald-600">Bajo el presupuesto asignado</p>
+                        </div>
+
+                        <div class="bg-brand-50 border border-brand-200/80 p-4 rounded-2xl space-y-1">
+                            <p class="text-[10px] font-bold text-brand-700 uppercase">Promedio mensual</p>
+                            <p class="text-2xl font-black text-brand-900">$ 655.000</p>
+                            <p class="text-[10px] text-brand-600">Basado en últimos 6 meses</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // CHART.JS INITIALIZER
+        let historicalChartInstance = null;
+        function initHistoricalChart() {
+            const ctx = document.getElementById('historicalChart');
+            if (!ctx) return;
+
+            if (historicalChartInstance) historicalChartInstance.destroy();
+
+            const dataset = HISTORICAL_DATA[state.historicalFilter || 'mes'];
+
+            historicalChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dataset.labels,
+                    datasets: [
+                        {
+                            label: 'Presupuesto',
+                            data: dataset.dataBudget,
+                            backgroundColor: '#cbd5e1',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Gasto Real',
+                            data: dataset.dataSpent,
+                            backgroundColor: '#ff4d4d',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // CHATBOT INTERACTION CONTROLLER
+        function openChatbot(initialText = '') {
+            const modal = document.getElementById('chatbot-modal');
+            if (modal) modal.classList.remove('hidden');
+            if (initialText) {
+                sendQuickChat(initialText);
+            }
+        }
+
+        function closeChatbot() {
+            const modal = document.getElementById('chatbot-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function sendQuickChat(text) {
+            appendChatMessage('user', text);
+            generateBotReply(text);
+        }
+
+        function handleChatSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            appendChatMessage('user', text);
+            input.value = '';
+            generateBotReply(text);
+        }
+
+        function appendChatMessage(sender, text) {
+            const chatBox = document.getElementById('chat-messages');
+            if (!chatBox) return;
+
+            const isUser = sender === 'user';
+            const msgHtml = `
+                <div class="flex gap-2.5 items-start ${isUser ? 'flex-row-reverse' : ''}">
+                    <div class="w-7 h-7 rounded-full ${isUser ? 'bg-slate-800' : 'bg-brand-500'} text-white flex items-center justify-center text-xs shrink-0 mt-0.5">
+                        <i class="fa-solid ${isUser ? 'fa-user' : 'fa-robot'}"></i>
+                    </div>
+                    <div class="${isUser ? 'bg-brand-500 text-white rounded-tr-none' : 'bg-white text-slate-700 border border-slate-200/80 rounded-tl-none'} p-3.5 rounded-2xl text-xs space-y-1.5 max-w-[85%] shadow-sm">
+                        <p class="leading-relaxed">${text}</p>
+                    </div>
+                </div>
+            `;
+            chatBox.insertAdjacentHTML('beforeend', msgHtml);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function generateBotReply(prompt) {
+            setTimeout(() => {
+                let reply = "¡Entendido! Te sugiero revisar las promociones semanales en D1 y Ara para maximizar tu presupuesto.";
+                const lower = prompt.toLowerCase();
+
+                if (lower.includes('20%') || lower.includes('reducir')) {
+                    reply = "Para reducir un 20% tu presupuesto en " + state.location + ":<br>1. Cambia carnes rojas por granos (lentejas/garbanzos) 2 días a la semana.<br>2. Compra frutas de temporada en Fruver La Sabana.<br>3. Aprovecha marcas propias en Tiendas D1 y Ara.";
+                } else if (lower.includes('queso') || lower.includes('sustituto')) {
+                    reply = "Un excelente sustituto económico para el queso es el cuajado campesino fresco en fruver o preparar crema de marañón/aguacate condimentado con sal marina para untar.";
+                } else if (lower.includes('receta') || lower.includes('huevos')) {
+                    reply = "Te sugiero preparar un <b>Calentado Criollo con Hogao</b>: mezcla el arroz y frijoles del día anterior, fríelos con un buen ahogado de tomate y cebolla, y acompáñalo con huevo frito.";
+                }
+
+                appendChatMessage('bot', reply);
+            }, 600);
+        }
+    </script>
+</body>
+</html>
